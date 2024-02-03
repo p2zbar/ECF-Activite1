@@ -81,3 +81,36 @@ variable "applications" {
   description = "List of applications to install on the cluster"
   type        = list(string)
 }
+
+variable "cluster_identifier" {
+  description = "The identifier for the DocumentDB cluster."
+  type        = string
+}
+
+variable "engine_version" {
+  description = "The engine version for the DocumentDB cluster."
+  type        = string
+  default     = "5.0.0"
+}
+
+variable "master_username" {
+  description = "The master username for the DocumentDB cluster."
+  type        = string
+}
+
+variable "master_password" {
+  description = "The master password for the DocumentDB cluster."
+  type        = string
+}
+
+variable "instance_count" {
+  description = "The number of instances in the DocumentDB cluster."
+  type        = number
+  default     = 3
+}
+
+variable "instance_class" {
+  description = "The instance class to use for the DocumentDB cluster."
+  type        = string
+  default     = "db.t3.medium"
+}
