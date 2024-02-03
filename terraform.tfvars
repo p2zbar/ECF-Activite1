@@ -1,0 +1,14 @@
+subnet_id                         = "subnet-043604d5f291d4994"
+emr_managed_master_security_group = "sg-032bfc7bcca1c7d07"
+emr_managed_slave_security_group  = "sg-0d23002824ab235c5"
+key_name = "spark-cluster"
+service_role = "EMR_DefaultRole"
+autoscaling_role = "EMR_AutoScaling_DefaultRole"
+instance_profile = "EMR_EC2_DefaultRole"
+cluster_name    = "spark-cluster"
+release_label   = "emr-7.0.0"
+applications    = ["Spark"]
+core_instance_count = 1
+core_instance_type = "m4.large"
+master_instance_type = "m4.large"
+master_instance_count = 1
