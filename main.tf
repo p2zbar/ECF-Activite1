@@ -2,16 +2,130 @@ provider "aws" {
   region = var.region
 }
 
+resource "aws_vpc" "studi_vpc" {
+  cidr_block = var.vpc_cidr_block
+  enable_dns_support = true
+  enable_dns_hostnames = true
+  tags = {
+    Name = "studi-vpc"
+  }
+}
+
+resource "aws_internet_gateway" "studi_igw" {
+  vpc_id = aws_vpc.studi_vpc.id
+  tags = {
+    Name = "studi-igw"
+  }
+}
+
+resource "aws_route_table" "studi_rt" {
+  vpc_id = aws_vpc.studi_vpc.id
+  route {
+    cidr_block = "0.0.0.0/0" # Route everything to the internet gateway
+    gateway_id = aws_internet_gateway.studi_igw.id
+  }
+  tags = {
+    Name = "studi-rt"
+  }
+}
+
+resource "aws_subnet" "subnet_front" {
+  vpc_id     = aws_vpc.studi_vpc.id
+  cidr_block = var.subnet_front_cidr_block
+  availability_zone = var.az_front
+  tags = {
+    Name = "subnet_front"
+  }
+}
+
+resource "aws_subnet" "subnet_back" {
+  vpc_id     = aws_vpc.studi_vpc.id
+  cidr_block = var.subnet_back_cidr_block
+  availability_zone = var.az_back
+  tags = {
+    Name = "subnet_back"
+  }
+}
+
+resource "aws_route_table_association" "subnet_front_association" {
+  subnet_id      = aws_subnet.subnet_front.id
+  route_table_id = aws_route_table.studi_rt.id
+}
+
+resource "aws_route_table_association" "subnet_back_association" {
+  subnet_id      = aws_subnet.subnet_back.id
+  route_table_id = aws_route_table.studi_rt.id
+}
+
+
+resource "aws_security_group" "sgr_emr_master" {
+  name        = "sgr_emr_master"
+  description = "Security group for EMR Master"
+  vpc_id      = aws_vpc.studi_vpc.id
+
+  dynamic "ingress" {
+    for_each = var.allowed_ports
+    content {
+      description = "Allow TCP ${ingress.value}"
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound traffic"
+  }
+
+  tags = {
+    Name = "emr_master"
+  }
+}
+
+resource "aws_security_group" "sgr_emr_slave" {
+  name        = "sgr_emr_slave"
+  description = "Security group for EMR Slave"
+  vpc_id      = aws_vpc.studi_vpc.id
+
+  dynamic "ingress" {
+    for_each = var.allowed_ports
+    content {
+      description = "Allow TCP ${ingress.value}"
+      from_port   = ingress.value
+      to_port     = ingress.value
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    }
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    description = "Allow all outbound traffic"
+  }
+
+  tags = {
+    Name = "emr_master"
+  }
+}
+
 resource "aws_emr_cluster" "spark_cluster" {
   name          = var.cluster_name
   release_label = var.release_label 
   applications  = var.applications
 
   ec2_attributes {
-    subnet_id                         = var.subnet_id
+    subnet_id                         = aws_subnet.subnet_back.id
     instance_profile                  = var.instance_profile
-    emr_managed_master_security_group = var.emr_managed_master_security_group
-    emr_managed_slave_security_group  = var.emr_managed_slave_security_group
+    emr_managed_master_security_group = aws_security_group.sgr_emr_master.id
+    emr_managed_slave_security_group  = aws_security_group.sgr_emr_slave.id
     key_name = var.key_name
   }
 
@@ -44,45 +158,4 @@ resource "aws_docdb_cluster_instance" "docdb_instances" {
   cluster_identifier = aws_docdb_cluster.docdb.id
   instance_class     = var.instance_class
   engine             = "docdb"
-}
-
-resource "aws_cloudwatch_dashboard" "monitoring_docdb_cluster" {
-  dashboard_name = "ApplicationMetricsDashboard"
-
-  dashboard_body = <<EOF
-{
-  "widgets": [
-    {
-      "type": "metric",
-      "x": 0,
-      "y": 0,
-      "width": 12,
-      "height": 6,
-      "properties": {
-        "metrics": [
-          ["Custom/Namespace", "WriteOperations", "Application", "MyApp"],
-          ["Custom/Namespace", "ReadOperations", "Application", "MyApp"],
-          ["Custom/Namespace", "DeleteOperations", "Application", "MyApp"]
-        ],
-        "view": "timeSeries",
-        "stacked": false,
-        "region": "${var.region}",
-        "stat": "Sum",
-        "period": 300,
-        "title": "Application Operations over 300s"
-      }
-    },
-    {
-      "type": "text",
-      "x": 0,
-      "y": 7,
-      "width": 3,
-      "height": 3,
-      "properties": {
-        "markdown": "This dashboard provides an overview of application operations."
-      }
-    }
-  ]
-}
-EOF
 }
