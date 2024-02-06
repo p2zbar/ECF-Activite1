@@ -1,7 +1,9 @@
+#AWS Provider 
 provider "aws" {
   region = var.region
 }
 
+#Creation of the VPC studi-vpc
 resource "aws_vpc" "studi_vpc" {
   cidr_block = var.vpc_cidr_block
   enable_dns_support = true
@@ -11,6 +13,7 @@ resource "aws_vpc" "studi_vpc" {
   }
 }
 
+#Create Internet Gateway studi_igw in the previous VPC
 resource "aws_internet_gateway" "studi_igw" {
   vpc_id = aws_vpc.studi_vpc.id
   tags = {
@@ -18,10 +21,11 @@ resource "aws_internet_gateway" "studi_igw" {
   }
 }
 
+#Create Route Table studi_rt in the previous VPC and route allow traffic to internet gw
 resource "aws_route_table" "studi_rt" {
   vpc_id = aws_vpc.studi_vpc.id
   route {
-    cidr_block = "0.0.0.0/0" # Route everything to the internet gateway
+    cidr_block = "0.0.0.0/0" 
     gateway_id = aws_internet_gateway.studi_igw.id
   }
   tags = {
@@ -29,6 +33,7 @@ resource "aws_route_table" "studi_rt" {
   }
 }
 
+#Create 1st subnet named subnet_front in the previous VPC
 resource "aws_subnet" "subnet_front" {
   vpc_id     = aws_vpc.studi_vpc.id
   cidr_block = var.subnet_front_cidr_block
@@ -38,6 +43,7 @@ resource "aws_subnet" "subnet_front" {
   }
 }
 
+#Create 2nd subnet named subnet_back in the previous VPC
 resource "aws_subnet" "subnet_back" {
   vpc_id     = aws_vpc.studi_vpc.id
   cidr_block = var.subnet_back_cidr_block
@@ -47,17 +53,20 @@ resource "aws_subnet" "subnet_back" {
   }
 }
 
+#Associate route table to the subnet_front
 resource "aws_route_table_association" "subnet_front_association" {
   subnet_id      = aws_subnet.subnet_front.id
   route_table_id = aws_route_table.studi_rt.id
 }
 
+#Associate route table to the subnet_back
 resource "aws_route_table_association" "subnet_back_association" {
   subnet_id      = aws_subnet.subnet_back.id
   route_table_id = aws_route_table.studi_rt.id
 }
 
-
+#Create security group sgr_emr_master in the previous VPC 
+#Allow SSH ingress and all traffic outbound
 resource "aws_security_group" "sgr_emr_master" {
   name        = "sgr_emr_master"
   description = "Security group for EMR Master"
@@ -87,6 +96,8 @@ resource "aws_security_group" "sgr_emr_master" {
   }
 }
 
+#Create security group sgr_emr_slave in the previous VPC 
+#Allow SSH ingress and all traffic egress
 resource "aws_security_group" "sgr_emr_slave" {
   name        = "sgr_emr_slave"
   description = "Security group for EMR Slave"
@@ -116,11 +127,13 @@ resource "aws_security_group" "sgr_emr_slave" {
   }
 }
 
+#Create Apache Spark Cluster using EC2
 resource "aws_emr_cluster" "spark_cluster" {
   name          = var.cluster_name
   release_label = var.release_label 
   applications  = var.applications
 
+#Create EC2 in the previous subnet_back,with sgr, type of instance and ssh key par
   ec2_attributes {
     subnet_id                         = aws_subnet.subnet_back.id
     instance_profile                  = var.instance_profile
@@ -132,17 +145,20 @@ resource "aws_emr_cluster" "spark_cluster" {
   service_role = var.service_role
   autoscaling_role = var.autoscaling_role
 
+#Set the instance type and bumber of instances for the master instance group
   master_instance_group {
     instance_type  = var.master_instance_type
     instance_count = var.master_instance_count
   }
 
+#Set the instance type and bumber of instances for the core instance group
   core_instance_group {
     instance_type  = var.core_instance_type
     instance_count = var.core_instance_count
   }
 }
 
+#Create the MongoDB Cluster with Document DB
 resource "aws_docdb_cluster" "docdb" {
   cluster_identifier      = var.cluster_identifier
   engine                  = "docdb"
@@ -152,6 +168,7 @@ resource "aws_docdb_cluster" "docdb" {
   enabled_cloudwatch_logs_exports = ["audit", "profiler"]
 }
 
+#Create Instances in the previous Cluster 
 resource "aws_docdb_cluster_instance" "docdb_instances" {
   count              = var.instance_count
   identifier         = "${var.cluster_identifier}-instance-${count.index}"
