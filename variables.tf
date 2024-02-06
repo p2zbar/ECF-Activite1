@@ -4,19 +4,34 @@ variable "region" {
   default     = "eu-central-1"
 }
 
-variable "subnet_id" {
-  description = "Subnet ID for the EMR cluster"
-  type        = string
+variable "vpc_cidr_block" {
+  description = "The CIDR block for the VPC Studi"
+  type = string
+  default     = "10.0.0.0/16"
 }
 
-variable "emr_managed_master_security_group" {
-  description = "Security group ID for the master node"
-  type        = string
+variable "subnet_front_cidr_block" {
+  description = "The CIDR block for the subnet_front"
+  type = string
+  default     = "10.0.1.0/24"
 }
 
-variable "emr_managed_slave_security_group" {
-  description = "Security group ID for the slave nodes"
+variable "az_front" {
+  description = "AZ For subnet front"
+  type = string
+  default = "eu-central-1a"  
+}
+
+variable "subnet_back_cidr_block" {
+  description = "The CIDR block for the subnet_back"
   type        = string
+  default     = "10.0.2.0/24"
+}
+
+variable "az_back" {
+  description = "AZ For subnet front"
+  type = string
+  default = "eu-central-1b"  
 }
 
 variable "master_instance_type" {
@@ -113,4 +128,10 @@ variable "instance_class" {
   description = "The instance class to use for the DocumentDB cluster."
   type        = string
   default     = "db.t3.medium"
+}
+
+variable "allowed_ports" {
+  description = "List of allowed ports"
+  type        = list(number)
+  default     = [22]  
 }
