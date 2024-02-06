@@ -29,7 +29,7 @@ variable "subnet_back_cidr_block" {
 }
 
 variable "az_back" {
-  description = "AZ For subnet front"
+  description = "AZ For subnet back"
   type = string
   default = "eu-central-1b"  
 }
@@ -41,11 +41,10 @@ variable "master_instance_type" {
 }
 
 variable "master_instance_count" {
-  description = "Number of EC2 instances for the core nodes"
+  description = "Number of EC2 instances for the master nodes"
   type        = number
   default     = 1
 }
-
 
 variable "core_instance_type" {
   description = "EC2 instance type for the core nodes"
