@@ -127,6 +127,36 @@ resource "aws_security_group" "sgr_emr_slave" {
   }
 }
 
+#Set encryption algorithm for SSH Key pair
+resource "tls_private_key" "rsa" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
+}
+
+#Create a Secrete on AWS Manager to store the ssh key
+resource "aws_secretsmanager_secret" "private_key_secret" {
+  name        = "my_studi_key"
+  description = "Key for EMR Cluster"
+}
+
+#Set the versionning of the secret and push private ssh key
+resource "aws_secretsmanager_secret_version" "private_key" {
+  secret_id     = aws_secretsmanager_secret.private_key_secret.id
+  secret_string = tls_private_key.rsa.private_key_pem
+}
+
+#Create the Public Key that will be push on Ressources and Aws Secret
+resource "aws_key_pair" "studi_key" {
+  key_name   = "studi_key"
+  public_key = tls_private_key.rsa.public_key_openssh
+}
+
+#Store also the Private Key in Local as .pem 
+resource "local_file" "studi_key" {
+  content  = tls_private_key.rsa.private_key_pem
+  filename = "studikey.pem"
+}
+
 #Create Apache Spark Cluster using EC2
 resource "aws_emr_cluster" "spark_cluster" {
   name          = var.cluster_name
@@ -139,7 +169,7 @@ resource "aws_emr_cluster" "spark_cluster" {
     instance_profile                  = var.instance_profile
     emr_managed_master_security_group = aws_security_group.sgr_emr_master.id
     emr_managed_slave_security_group  = aws_security_group.sgr_emr_slave.id
-    key_name = var.key_name
+    key_name = aws_key_pair.studi_key.key_name
   }
 
   service_role = var.service_role
