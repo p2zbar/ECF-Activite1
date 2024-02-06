@@ -58,11 +58,6 @@ variable "core_instance_count" {
   default     = 2
 }
 
-variable "key_name" {
-  description = "The EC2 key pair name for SSH access to the EMR instances"
-  type        = string
-}
-
 variable "service_role" {
   description = "The IAM role for the EMR service"
   type        = string
