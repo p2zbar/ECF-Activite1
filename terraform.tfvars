@@ -1,4 +1,3 @@
-key_name = "spark-cluster"
 service_role = "EMR_DefaultRole"
 autoscaling_role = "EMR_AutoScaling_DefaultRole"
 instance_profile = "EMR_EC2_DefaultRole"
