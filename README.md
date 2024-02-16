@@ -26,13 +26,15 @@ git clone git@github.com:p2zbar/ECF-Activite1.git
 ```
  
 Le code est divise en 3 fichiers:  
+  
 **main.tf** contient tout le code de la creation d'un VPC , une IGW , une Route table , 2 Security-groups, 2 subnets , 1 cluster EMR (1 core , 1 master) et 1 cluster Document DB (3 instances en db.t3.medium).  
 **variables.tf** permet de ne pas ecrire tout le code en dur et de facilite la reutilisation du projet pour une autre infra.  
 **terraform.tvars** contient les valeurs qui seront utilisees dans le variables.tf si pas de variable default de configurer.
 
 Pour lancer le projet:
-- Ouvrir un terminal dans votre IDE
-initier le projet
+- Ouvrir un terminal dans votre IDE  
+
+initier le projet  
 ```
 terraform init 
 ```
@@ -59,4 +61,10 @@ Pour supprimer tout ce qui a ete cree
 terraform destroy
 ```
 Confirmer en tapant yes
+
 Un message vous sera afficher "Destroy Completed"
+
+
+
+
+
